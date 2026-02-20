@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>MOTO SPEED</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #ff2020;
+    --amber: #ffaa00;
+    --bg: #0a0a0a;
+    --panel: #111;
+    --border: #222;
+    --text: #f0ede8;
+    --dim: #444;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    position: relative;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.4;
+  }
+
+  .gauge-wrap {
+    position: relative;
+    width: min(90vw, 400px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* Arc SVG */
+  .arc-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+
+  .arc-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .track {
+    fill: none;
+    stroke: #1a1a1a;
+    stroke-width: 18;
+    stroke-linecap: butt;
+  }
+
+  .fill {
+    fill: none;
+    stroke: var(--red);
+    stroke-width: 18;
+    stroke-linecap: butt;
+    transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;
+    filter: drop-shadow(0 0 8px rgba(255,32,32,0.7));
+  }
+
+  .needle {
+    transform-origin: 50% 50%;
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  /* Center display */
+  .center-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .speed-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 18vw, 120px);
+    line-height: 1;
+    color: var(--text);
+    letter-spacing: -2px;
+    transition: color 0.3s;
+  }
+
+  .speed-number.warning { color: var(--amber); }
+  .speed-number.danger  { color: var(--red);   }
+
+  .unit-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(13px, 3.5vw, 18px);
+    color: var(--dim);
+    letter-spacing: 0.25em;
+    margin-top: -4px;
+  }
+
+  /* Stats bar */
+  .stats {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr 1px 1fr;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--red);
+    margin-top: -2px;
+  }
+
+  .divider { background: var(--border); }
+
+  .stat {
+    padding: 12px 8px;
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(18px, 5vw, 28px);
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+
+  .stat-lbl {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 0.2em;
+    margin-top: 2px;
+  }
+
+  /* Toggle & start */
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  button {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:active { background: #1f1f1f; }
+
+  button.primary {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  button.primary.active {
+    background: var(--red);
+    color: #fff;
+  }
+
+  /* Status bar */
+  .status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.15em;
+    margin-top: 14px;
+    text-align: center;
+    min-height: 16px;
+  }
+
+  .status.ok   { color: #44cc66; }
+  .status.warn { color: var(--amber); }
+  .status.err  { color: var(--red); }
+
+  /* Top header */
+  .header {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(11px, 3vw, 14px);
+    letter-spacing: 0.5em;
+    color: var(--dim);
+    margin-bottom: 16px;
+  }
+
+  /* Tick marks */
+  .tick-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    fill: #444;
+  }
+
+  /* Max speed flash */
+  @keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .flash { animation: flash 0.6s ease 3; }
+</style>
+</head>
+<body>
+
+<div class="header">MOTO SPEEDOMETER</div>
+
+<div class="gauge-wrap">
+  <div class="arc-container">
+    <svg class="arc-svg" viewBox="0 0 300 300" id="gaugeSvg">
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Track arc: 220deg sweep, starting at ~160deg (bottom-left) -->
+      <circle class="track" cx="150" cy="150" r="118"
+        stroke-dasharray="452 999"
+        stroke-dashoffset="-63"
+        transform="rotate(90 150 150)"
+      />
+
+      <!-- Fill arc -->
+      <circle class="fill" id="arcFill" cx="150" cy="150" r="118"
+        stroke-dasharray="0 999"
+        stroke-dashoffset="-63"
+        transform="rotate(90 150 150)"
+      />
+
+      <!-- Needle -->
+      <g class="needle" id="needle" transform="rotate(-110 150 150)">
+        <line x1="150" y1="150" x2="150" y2="42" stroke="#ff2020" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)"/>
+        <circle cx="150" cy="150" r="7" fill="#222" stroke="#ff2020" stroke-width="2"/>
+      </g>
+
+      <!-- Tick marks & labels -->
+      <g id="ticks"></g>
+
+      <!-- Center display mount ring -->
+      <circle cx="150" cy="150" r="72" fill="#0e0e0e" stroke="#1c1c1c" stroke-width="1"/>
+    </svg>
+
+    <div class="center-display">
+      <div class="speed-number" id="speedNum">0</div>
+      <div class="unit-label" id="unitLbl">KM/H</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val" id="maxSpd">0</div>
+      <div class="stat-lbl">MAX</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat">
+      <div class="stat-val" id="avgSpd">0</div>
+      <div class="stat-lbl">AVG</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat">
+      <div class="stat-val" id="tripDist">0.0</div>
+      <div class="stat-lbl">KM</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="primary" id="startBtn" onclick="toggleTracking()">START</button>
+  <button onclick="toggleUnit()">MPH / KMH</button>
+  <button onclick="resetStats()">RESET</button>
+</div>
+
+<div class="status" id="status">PRESS START TO BEGIN</div>
+
+<script>
+  const MAX_SPEED = 200; // km/h for arc scale
+  const ARC_SWEEP = 220; // degrees
+  const CIRCUMFERENCE = 2 * Math.PI * 118;
+  const ARC_LENGTH = (ARC_SWEEP / 360) * CIRCUMFERENCE;
+
+  let watchId = null;
+  let useKmh = true;
+  let speedKmh = 0;
+  let maxKmh = 0;
+  let totalDist = 0; // meters
+  let speedSamples = [];
+  let lastPos = null;
+  let running = false;
+
+  // Draw tick marks
+  const ticksG = document.getElementById('ticks');
+  const tickVals = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
+  tickVals.forEach(v => {
+    const ang = -110 + (v / MAX_SPEED) * ARC_SWEEP; // degrees
+    const rad = ang * Math.PI / 180;
+    const cx = 150, cy = 150, r1 = 100, r2 = 108;
+    const x1 = cx + r1 * Math.cos(rad);
+    const y1 = cy + r1 * Math.sin(rad);
+    const x2 = cx + r2 * Math.cos(rad);
+    const y2 = cy + r2 * Math.sin(rad);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', '#333'); line.setAttribute('stroke-width', v % 40 === 0 ? '2' : '1');
+    ticksG.appendChild(line);
+    if (v % 40 === 0) {
+      const tx = cx + 91 * Math.cos(rad);
+      const ty = cy + 91 * Math.sin(rad);
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x', tx); txt.setAttribute('y', ty);
+      txt.setAttribute('text-anchor','middle'); txt.setAttribute('dominant-baseline','middle');
+      txt.setAttribute('class','tick-label');
+      txt.textContent = v;
+      ticksG.appendChild(txt);
+    }
+  });
+
+  function setSpeed(kmh) {
+    speedKmh = kmh;
+    const display = useKmh ? Math.round(kmh) : Math.round(kmh * 0.621371);
+    const el = document.getElementById('speedNum');
+    el.textContent = display;
+
+    // Color warning
+    el.classList.remove('warning','danger');
+    if (kmh > 140) el.classList.add('danger');
+    else if (kmh > 100) el.classList.add('warning');
+
+    // Arc fill
+    const frac = Math.min(kmh / MAX_SPEED, 1);
+    const fillLen = frac * ARC_LENGTH;
+    const arc = document.getElementById('arcFill');
+    arc.style.strokeDasharray = `${fillLen} 999`;
+
+    // Arc color by speed
+    arc.style.stroke = kmh > 140 ? '#ff2020' : kmh > 100 ? '#ffaa00' : '#ff2020';
+
+    // Needle rotation: from -110 to +110 degrees
+    const needleAngle = -110 + frac * ARC_SWEEP;
+    document.getElementById('needle').setAttribute('transform', `rotate(${needleAngle} 150 150)`);
+
+    // Max
+    if (kmh > maxKmh) {
+      maxKmh = kmh;
+      const maxEl = document.getElementById('maxSpd');
+      maxEl.textContent = useKmh ? Math.round(maxKmh) : Math.round(maxKmh * 0.621371);
+      maxEl.classList.add('flash');
+      setTimeout(() => maxEl.classList.remove('flash'), 2000);
+    }
+
+    // Avg
+    speedSamples.push(kmh);
+    const avg = speedSamples.reduce((a,b) => a+b, 0) / speedSamples.length;
+    document.getElementById('avgSpd').textContent = useKmh ? Math.round(avg) : Math.round(avg * 0.621371);
+  }
+
+  function updateUnit() {
+    document.getElementById('unitLbl').textContent = useKmh ? 'KM/H' : 'MPH';
+    document.getElementById('tripDist').textContent = useKmh
+      ? (totalDist / 1000).toFixed(1)
+      : (totalDist / 1609.34).toFixed(1);
+    document.querySelector('[id="tripDist"] ~ .stat-lbl, .stat:last-child .stat-lbl').textContent = useKmh ? 'KM' : 'MI';
+    // re-render stats labels
+    document.querySelectorAll('.stat')[2].querySelector('.stat-lbl').textContent = useKmh ? 'KM' : 'MI';
+    setSpeed(speedKmh);
+  }
+
+  function toggleUnit() {
+    useKmh = !useKmh;
+    updateUnit();
+  }
+
+  function resetStats() {
+    maxKmh = 0; totalDist = 0; speedSamples = []; lastPos = null;
+    document.getElementById('maxSpd').textContent = '0';
+    document.getElementById('avgSpd').textContent = '0';
+    document.getElementById('tripDist').textContent = '0.0';
+    setSpeed(0);
+  }
+
+  function setStatus(msg, cls) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status ' + (cls || '');
+  }
+
+  function toggleTracking() {
+    if (running) {
+      stopTracking();
+    } else {
+      startTracking();
+    }
+  }
+
+  function startTracking() {
+    if (!navigator.geolocation) {
+      setStatus('GPS NOT SUPPORTED ON THIS DEVICE', 'err');
+      return;
+    }
+    setStatus('ACQUIRING GPS SIGNAL...', 'warn');
+    watchId = navigator.geolocation.watchPosition(
+      onPosition,
+      onError,
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+    );
+    running = true;
+    document.getElementById('startBtn').textContent = 'STOP';
+    document.getElementById('startBtn').classList.add('active');
+  }
+
+  function stopTracking() {
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    running = false;
+    setSpeed(0);
+    document.getElementById('startBtn').textContent = 'START';
+    document.getElementById('startBtn').classList.remove('active');
+    setStatus('TRACKING STOPPED', '');
+  }
+
+  function onPosition(pos) {
+    const { speed, latitude, longitude, accuracy } = pos.coords;
+    // speed in m/s from browser
+    let kmh = 0;
+    if (speed !== null && speed >= 0) {
+      kmh = speed * 3.6;
+    }
+
+    // Distance tracking via haversine if speed unavailable
+    if (lastPos) {
+      const d = haversine(lastPos.lat, lastPos.lng, latitude, longitude);
+      totalDist += d;
+      const distDisplay = useKmh ? (totalDist/1000).toFixed(1) : (totalDist/1609.34).toFixed(1);
+      document.getElementById('tripDist').textContent = distDisplay;
+    }
+    lastPos = { lat: latitude, lng: longitude };
+
+    setSpeed(kmh);
+    setStatus(`GPS OK  ±${Math.round(accuracy)}m`, 'ok');
+  }
+
+  function onError(err) {
+    const msgs = {
+      1: 'LOCATION PERMISSION DENIED',
+      2: 'GPS SIGNAL UNAVAILABLE',
+      3: 'GPS TIMEOUT — RETRYING'
+    };
+    setStatus(msgs[err.code] || 'GPS ERROR', 'err');
+  }
+
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLon = (lon2-lon1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  // Prevent screen sleep via Wake Lock API
+  async function requestWakeLock() {
+    if ('wakeLock' in navigator) {
+      try {
+        await navigator.wakeLock.request('screen');
+      } catch(e) {}
+    }
+  }
+  requestWakeLock();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') requestWakeLock();
+  });
+</script>
+</body>
+</html>
