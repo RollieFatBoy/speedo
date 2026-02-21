@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>MOTO SPEED</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Share+Tech+Mono&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #1e1f22;
+  --card:      linear-gradient(150deg, #2a2c30 0%, #222427 100%);
+  --dark:      #f0f1f3;
+  --mid:       #a0a4ac;
+  --dim:       #5a5e67;
+  --green:     #2ecc71;
+  --amber:     #e67e22;
+  --red:       #e74c3c;
+  --border-hi: rgba(255,255,255,0.07);
+  --border-lo: rgba(0,0,0,0.4);
+  --shadow:    0 2px 16px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.3);
+  --inset:     inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--bg);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+body {
+  display: grid;
+  grid-template-columns: 1fr 1px minmax(175px, 30vw);
+  height: 100dvh;
+  height: -webkit-fill-available;
+  padding: env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);
+}
+
+/* vignette */
+body::after {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 999;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.3) 100%);
+}
+
+/* ═══════ SPEED COLUMN ═══════ */
+.speed-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  gap: 0;
+}
+
+.speed-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--red);
+  border-radius: 14px;
+  padding: 8px 24px 12px;
+  background: rgba(20,21,24,0.6);
+  box-shadow: 0 0 40px rgba(231,76,60,0.12), 0 0 0 1px rgba(231,76,60,0.1), var(--inset);
+  width: 100%;
+  max-width: 520px;
+}
+
+.speed-num {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(100px, 28vw, 260px);
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 0.9;
+  letter-spacing: -4px;
+  transition: color 0.2s;
+  text-shadow: 0 4px 30px rgba(0,0,0,0.7);
+  user-select: none;
+}
+.speed-num.warn   { color: var(--amber); text-shadow: 0 0 30px rgba(230,126,34,0.4); }
+.speed-num.danger { color: var(--red);   text-shadow: 0 0 30px rgba(231,76,60,0.5);  }
+
+.speed-unit {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(14px, 3vw, 24px);
+  color: var(--dim);
+  letter-spacing: 0.4em;
+  margin-top: 4px;
+  user-select: none;
+}
+
+/* ═══════ DIVIDER ═══════ */
+.divider {
+  background: linear-gradient(to bottom,
+    transparent 5%,
+    rgba(0,0,0,0.45) 20%,
+    rgba(0,0,0,0.45) 80%,
+    transparent 95%);
+}
+
+/* ═══════ INFO COLUMN ═══════ */
+.info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px 10px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border-lo);
+  border-top-color: var(--border-hi);
+  border-radius: 9px;
+  box-shadow: var(--shadow), var(--inset);
+}
+
+/* Clock */
+.clock {
+  padding: 8px 10px;
+  text-align: center;
+}
+.clock-time {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(26px, 6vh, 48px);
+  color: var(--dark);
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+.clock-date {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(9px, 1.7vh, 13px);
+  color: var(--dim);
+  letter-spacing: 0.2em;
+  margin-top: 5px;
+}
+
+/* Stats */
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  flex: 1;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  min-height: 0;
+}
+.stat.wide { grid-column: span 2; }
+.s-val {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(22px, 4.5vh, 38px);
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1;
+}
+.s-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(8px, 1.4vh, 11px);
+  color: var(--dim);
+  letter-spacing: 0.2em;
+  margin-top: 3px;
+}
+
+/* Status */
+.status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(8px, 1.3vh, 11px);
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  text-align: center;
+  padding: 1px 0;
+}
+.status.ok   { color: var(--green); }
+.status.warn { color: var(--amber); }
+.status.err  { color: var(--red);   }
+
+/* Buttons */
+.btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+button {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: clamp(13px, 2.2vh, 18px);
+  letter-spacing: 0.07em;
+  padding: 8px 4px;
+  border-radius: 7px;
+  border: 1px solid var(--border-lo);
+  background: var(--card);
+  color: var(--mid);
+  cursor: pointer;
+  box-shadow: var(--shadow), var(--inset);
+  transition: all 0.12s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+button:active { box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); transform: translateY(1px); }
+
+#startBtn {
+  grid-column: span 2;
+  font-size: clamp(28px, 6vh, 50px);
+  padding: 14px 4px;
+  letter-spacing: 0.22em;
+  color: var(--red);
+  border-color: rgba(231,76,60,0.45);
+}
+#startBtn.live {
+  background: linear-gradient(155deg, #e74c3c, #c0392b);
+  color: #fff;
+  border-color: #992820;
+  box-shadow: 0 3px 18px rgba(231,76,60,0.4), var(--inset);
+}
+
+@keyframes flash { 0%,100%{opacity:1} 50%{opacity:0.1} }
+.flash { animation: flash 0.5s ease 3; }
+</style>
+</head>
+<body>
+
+<!-- SPEED -->
+<div class="speed-col">
+  <div class="speed-box">
+    <div class="speed-num" id="speedNum">0</div>
+    <div class="speed-unit" id="unitLbl">KM/H</div>
+  </div>
+</div>
+
+<!-- DIVIDER -->
+<div class="divider"></div>
+
+<!-- INFO PANEL -->
+<div class="info-col">
+
+  <div class="card clock">
+    <div class="clock-time" id="clockTime">--:--:--</div>
+    <div class="clock-date" id="clockDate">---</div>
+  </div>
+
+  <div class="stats" style="flex:1">
+    <div class="card stat">
+      <div class="s-val" id="maxSpd">0</div>
+      <div class="s-lbl">MAX</div>
+    </div>
+    <div class="card stat">
+      <div class="s-val" id="avgSpd">0</div>
+      <div class="s-lbl">AVG</div>
+    </div>
+    <div class="card stat wide">
+      <div class="s-val" id="tripDist">0.0</div>
+      <div class="s-lbl" id="distLbl">KM TRIP</div>
+    </div>
+  </div>
+
+  <div class="status" id="status">PRESS START</div>
+
+  <div class="btns">
+    <button id="startBtn" onclick="toggleTracking()">START</button>
+    <button onclick="toggleUnit()">MPH / KMH</button>
+    <button onclick="resetStats()">RESET</button>
+  </div>
+
+</div>
+
+<script>
+let watchId=null, running=false, useKmh=true;
+let speedKmh=0, maxKmh=0, totalDist=0;
+let speedSums=0, speedCount=0, lastPos=null;
+
+// ─── Clock ────────────────────────────────────────────────────────────────
+const DAYS  = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const MONTHS= ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function tickClock() {
+  const n = new Date();
+  document.getElementById('clockTime').textContent =
+    [n.getHours(), n.getMinutes(), n.getSeconds()].map(x => String(x).padStart(2,'0')).join(':');
+  document.getElementById('clockDate').textContent =
+    `${DAYS[n.getDay()]}  ${n.getDate()} ${MONTHS[n.getMonth()]} ${n.getFullYear()}`;
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+// ─── Speed ────────────────────────────────────────────────────────────────
+function setSpeed(kmh) {
+  speedKmh = kmh;
+  const display = useKmh ? Math.round(kmh) : Math.round(kmh * 0.621371);
+  const el = document.getElementById('speedNum');
+  el.textContent = display;
+  el.classList.remove('warn','danger');
+  if      (kmh > 110) el.classList.add('danger');
+  else if (kmh > 60)  el.classList.add('warn');
+
+  if (kmh > maxKmh) {
+    maxKmh = kmh;
+    const mel = document.getElementById('maxSpd');
+    mel.textContent = useKmh ? Math.round(maxKmh) : Math.round(maxKmh * 0.621371);
+    mel.classList.add('flash');
+    setTimeout(() => mel.classList.remove('flash'), 1800);
+  }
+  if (running && kmh > 0) { speedSums += kmh; speedCount++; }
+  const avg = speedCount ? speedSums / speedCount : 0;
+  document.getElementById('avgSpd').textContent = useKmh ? Math.round(avg) : Math.round(avg * 0.621371);
+}
+
+// ─── Unit toggle ──────────────────────────────────────────────────────────
+function toggleUnit() {
+  useKmh = !useKmh;
+  document.getElementById('unitLbl').textContent  = useKmh ? 'KM/H' : 'MPH';
+  document.getElementById('distLbl').textContent  = useKmh ? 'KM TRIP' : 'MI TRIP';
+  document.getElementById('tripDist').textContent = useKmh
+    ? (totalDist / 1000).toFixed(1) : (totalDist / 1609.34).toFixed(1);
+  const avg = speedCount ? speedSums / speedCount : 0;
+  document.getElementById('maxSpd').textContent = useKmh ? Math.round(maxKmh) : Math.round(maxKmh * 0.621371);
+  document.getElementById('avgSpd').textContent = useKmh ? Math.round(avg) : Math.round(avg * 0.621371);
+  setSpeed(speedKmh);
+}
+
+// ─── Reset ────────────────────────────────────────────────────────────────
+function resetStats() {
+  maxKmh=0; totalDist=0; speedSums=0; speedCount=0; lastPos=null;
+  document.getElementById('maxSpd').textContent  = '0';
+  document.getElementById('avgSpd').textContent  = '0';
+  document.getElementById('tripDist').textContent = '0.0';
+  setSpeed(0);
+}
+
+// ─── Status ───────────────────────────────────────────────────────────────
+function setStatus(msg, cls) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+// ─── GPS ──────────────────────────────────────────────────────────────────
+function toggleTracking() { running ? stopTracking() : startTracking(); }
+
+function startTracking() {
+  if (!navigator.geolocation) { setStatus('GPS NOT SUPPORTED', 'err'); return; }
+  setStatus('ACQUIRING SIGNAL…', 'warn');
+  watchId = navigator.geolocation.watchPosition(onPos, onErr,
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 7000 });
+  running = true;
+  const b = document.getElementById('startBtn');
+  b.textContent = 'STOP'; b.classList.add('live');
+}
+
+function stopTracking() {
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  watchId = null; running = false;
+  setSpeed(0);
+  const b = document.getElementById('startBtn');
+  b.textContent = 'START'; b.classList.remove('live');
+  setStatus('STOPPED');
+}
+
+function onPos(pos) {
+  const { speed, latitude, longitude, accuracy } = pos.coords;
+  const kmh = (speed !== null && speed >= 0) ? speed * 3.6 : 0;
+  if (lastPos) {
+    totalDist += haversine(lastPos.lat, lastPos.lng, latitude, longitude);
+    document.getElementById('tripDist').textContent = useKmh
+      ? (totalDist / 1000).toFixed(1) : (totalDist / 1609.34).toFixed(1);
+  }
+  lastPos = { lat: latitude, lng: longitude };
+  setSpeed(kmh);
+  setStatus(`GPS  ±${Math.round(accuracy)}m`, 'ok');
+}
+
+function onErr(err) {
+  const msgs = { 1:'PERMISSION DENIED', 2:'SIGNAL LOST', 3:'GPS TIMEOUT' };
+  setStatus(msgs[err.code] || 'GPS ERROR', 'err');
+}
+
+function haversine(a, b, c, d) {
+  const R = 6371000, r = Math.PI / 180;
+  const x = Math.sin(((c-a)*r)/2)**2 + Math.cos(a*r)*Math.cos(c*r)*Math.sin(((d-b)*r)/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+}
+
+// ─── Wake lock ────────────────────────────────────────────────────────────
+async function keepAwake() {
+  if ('wakeLock' in navigator) try { await navigator.wakeLock.request('screen'); } catch(_) {}
+}
+keepAwake();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) keepAwake(); });
+</script>
+</body>
+</html>
